@@ -82,8 +82,11 @@ export default function App() {
 				<Links />
 			</head>
 			<body>
-				<Navigation />
-				<Outlet />
+				<div className="py-2.5 px-5 md:py-5 md:px-10">
+					<Navigation />
+					<Outlet />
+				</div>
+
 				<ScrollRestoration />
 				<Scripts />
 				<LiveReload />

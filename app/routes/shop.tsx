@@ -1,7 +1,5 @@
-import { useLoaderData } from "@remix-run/react";
+import { Outlet } from "@remix-run/react";
 import { json } from "@remix-run/node";
-
-import DirectoryItem from "~/components/DirectoryItem";
 
 import { getCategoriesAndDocuments } from "~/utils/firebase";
 
@@ -25,17 +23,6 @@ export async function loader() {
 	return json(categoriesMap);
 }
 
-export default function Index() {
-	const categoriesMap = useLoaderData<typeof loader>();
-
-	return (
-		<div className="w-full flex flex-wrap justify-between">
-			{Object.keys(categoriesMap).map((category) => (
-				<DirectoryItem
-					key={categoriesMap[category].title}
-					category={categoriesMap[category]}
-				/>
-			))}
-		</div>
-	);
+export default function ShopRoute() {
+	return <Outlet />;
 }

@@ -1,9 +1,12 @@
 import { Link } from "@remix-run/react";
 
-export default function DirectoryItem({ category }) {
+import type { Category } from "~/utils/firebase";
+
+export default function DirectoryItem({ category }: { category: Category }) {
 	return (
 		<Link
 			to={`/shop/${category.title}`}
+			prefetch="intent"
 			className="group min-w-[30%] h-52 flex-auto flex justify-center items-center border border-black mt-0 mx-2 mb-4 overflow-hidden hover:cursor-pointer first:mr-2 last:ml-2 md:h-60"
 		>
 			<img
