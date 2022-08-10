@@ -20,7 +20,7 @@ import type { MetaFunction, ActionArgs } from "@remix-run/node";
 import type { QueryDocumentSnapshot } from "firebase/firestore";
 import type { UserData } from "./utils/firebase";
 
-import styles from "./styles/app.css";
+import styles from "./styles/tailwind.css";
 
 export function links() {
 	return [
