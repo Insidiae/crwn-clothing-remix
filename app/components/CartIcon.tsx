@@ -1,10 +1,12 @@
+import { useCart } from "~/context/cartContext";
+
 import ShoppingBagIcon from "./ShoppingBagIcon";
 
 export default function CartIcon() {
-	const cartCount = 0;
+	const { cartCount, setIsCartOpen } = useCart();
 
 	function toggleCart() {
-		// TODO
+		setIsCartOpen((prevState) => !prevState);
 	}
 
 	return (

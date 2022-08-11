@@ -1,11 +1,14 @@
 import Button from "./Button";
 
+import { useCart } from "~/context/cartContext";
+
 import type { CategoryItem } from "~/utils/firebase";
 
 function ProductCard({ product }: { product: CategoryItem }) {
+	const { addItemToCart } = useCart();
+
 	function addProductToCart() {
-		//TODO
-		// dispatch(addItemToCart(product));
+		addItemToCart(product);
 	}
 
 	return (

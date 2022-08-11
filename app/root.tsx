@@ -3,12 +3,11 @@ import {
 	Links,
 	LiveReload,
 	Meta,
-	Outlet,
 	Scripts,
 	ScrollRestoration,
 } from "@remix-run/react";
 
-import Navigation from "./components/Navigation";
+import AppRoot from "./components/AppRoot";
 
 import {
 	getCurrentUser,
@@ -82,11 +81,7 @@ export default function App() {
 				<Links />
 			</head>
 			<body>
-				<div className="py-2.5 px-5 md:py-5 md:px-10">
-					<Navigation />
-					<Outlet />
-				</div>
-
+				<AppRoot />
 				<ScrollRestoration />
 				<Scripts />
 				<LiveReload />

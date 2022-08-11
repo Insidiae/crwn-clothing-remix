@@ -1,8 +1,11 @@
 import { Link } from "@remix-run/react";
+
 import CartItem from "./CartItem";
 
+import { useCart } from "~/context/cartContext";
+
 export default function CartDropdown() {
-	const cartItems = [];
+	const { cartItems } = useCart();
 
 	return (
 		<div className="absolute top-24 right-10 w-60 h-[340px] p-5 border border-black bg-white flex flex-col z-[5]">

@@ -4,11 +4,13 @@ import CrwnLogo from "~/components/CrwnLogo";
 import CartIcon from "~/components/CartIcon";
 import CartDropdown from "~/components/CartDropdown";
 
+import { useCart } from "~/context/cartContext";
+
 import { useOptionalUser } from "~/utils/utils";
 
 export default function Navigation() {
 	const currentUser = useOptionalUser();
-	const isCartOpen = false;
+	const { isCartOpen } = useCart();
 
 	return (
 		<>
