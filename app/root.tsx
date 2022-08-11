@@ -5,9 +5,12 @@ import {
 	Meta,
 	Scripts,
 	ScrollRestoration,
+	useLoaderData,
 } from "@remix-run/react";
 
 import AppRoot from "./components/AppRoot";
+
+import { getEnv } from "./env.server";
 
 import {
 	getCurrentUser,
@@ -46,20 +49,23 @@ export const meta: MetaFunction = () => ({
 export async function loader() {
 	const authUser = await getCurrentUser();
 
+	let user: (UserData & { id: string }) | null = null;
+
 	if (authUser) {
 		const userSnapshot = (await createUserDocumentFromAuth(
 			authUser
 		)) as QueryDocumentSnapshot<UserData>;
 
-		return json<{ user: UserData & { id: string } }>({
-			user: {
-				id: userSnapshot.id,
-				...userSnapshot.data(),
-			},
-		});
+		user = {
+			id: userSnapshot.id,
+			...userSnapshot.data(),
+		};
 	}
 
-	return json({ user: null });
+	return json({
+		user,
+		ENV: getEnv(),
+	});
 }
 
 export async function action({ request }: ActionArgs) {
@@ -74,6 +80,8 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function App() {
+	const { ENV } = useLoaderData<typeof loader>();
+
 	return (
 		<html lang="en">
 			<head>
@@ -84,6 +92,11 @@ export default function App() {
 				<AppRoot />
 				<ScrollRestoration />
 				<Scripts />
+				<script
+					dangerouslySetInnerHTML={{
+						__html: `window.ENV = ${JSON.stringify(ENV)}`,
+					}}
+				/>
 				<LiveReload />
 			</body>
 		</html>
