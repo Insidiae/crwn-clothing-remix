@@ -19,7 +19,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
 
 	React.useEffect(() => {
 		getStripe().then((res) => setStripe(res));
-	});
+	}, []);
 
 	return stripe ? (
 		<Elements stripe={stripe}>
