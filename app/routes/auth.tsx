@@ -1,5 +1,5 @@
 import { json, redirect } from "@remix-run/node";
-import { useSubmit } from "@remix-run/react";
+import { useActionData, useSubmit, useTransition } from "@remix-run/react";
 import { FirebaseError } from "firebase/app";
 import { GoogleAuthProvider, AuthErrorCodes } from "firebase/auth";
 import invariant from "tiny-invariant";
@@ -31,6 +31,11 @@ export async function loader() {
 	return json({});
 }
 
+type AuthErrors = {
+	emailSignIn?: FirebaseError;
+	googleSignIn?: FirebaseError;
+	signUp?: FirebaseError;
+};
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const intent = formData.get("intent");
@@ -45,22 +50,28 @@ export async function action({ request }: ActionArgs) {
 			"Password is required"
 		);
 
-		const userCredential = await signInAuthUserWithEmailAndPassword(
-			email,
-			password
-		);
+		try {
+			const userCredential = await signInAuthUserWithEmailAndPassword(
+				email,
+				password
+			);
 
-		if (userCredential) {
-			const { user } = userCredential;
+			if (userCredential) {
+				const { user } = userCredential;
 
-			const userSnapshot = (await createUserDocumentFromAuth(
-				user
-			)) as QueryDocumentSnapshot<UserData>;
+				const userSnapshot = (await createUserDocumentFromAuth(
+					user
+				)) as QueryDocumentSnapshot<UserData>;
 
-			//? Seems like the firebase sign-in methods already handles
-			//? setting the currentUser session automatically?
-			// return { id: userSnapshot.id, ...userSnapshot.data() };
-			return redirect("/");
+				//? Seems like the firebase sign-in methods already handles
+				//? setting the currentUser session automatically?
+				// return { id: userSnapshot.id, ...userSnapshot.data() };
+				return redirect("/");
+			}
+		} catch (error) {
+			if (error instanceof FirebaseError) {
+				return json<AuthErrors>({ emailSignIn: error });
+			}
 		}
 	}
 
@@ -71,19 +82,25 @@ export async function action({ request }: ActionArgs) {
 			"Please proceed with Google Sign In"
 		);
 
-		const credential = GoogleAuthProvider.credential(idToken);
+		try {
+			const credential = GoogleAuthProvider.credential(idToken);
 
-		const userCredential = await signInWithGoogleCredential(credential);
+			const userCredential = await signInWithGoogleCredential(credential);
 
-		if (userCredential) {
-			const { user } = userCredential;
+			if (userCredential) {
+				const { user } = userCredential;
 
-			const userSnapshot = (await createUserDocumentFromAuth(
-				user
-			)) as QueryDocumentSnapshot<UserData>;
+				const userSnapshot = (await createUserDocumentFromAuth(
+					user
+				)) as QueryDocumentSnapshot<UserData>;
 
-			// return { id: userSnapshot.id, ...userSnapshot.data() };
-			return redirect("/");
+				// return { id: userSnapshot.id, ...userSnapshot.data() };
+				return redirect("/");
+			}
+		} catch (error) {
+			if (error instanceof FirebaseError) {
+				return json<AuthErrors>({ googleSignIn: error });
+			}
 		}
 	}
 
@@ -102,20 +119,26 @@ export async function action({ request }: ActionArgs) {
 			"Display Name is required"
 		);
 
-		const userCredential = await createAuthUserWithEmailAndPassword(
-			email,
-			password
-		);
+		try {
+			const userCredential = await createAuthUserWithEmailAndPassword(
+				email,
+				password
+			);
 
-		if (userCredential) {
-			const { user } = userCredential;
+			if (userCredential) {
+				const { user } = userCredential;
 
-			const userSnapshot = (await createUserDocumentFromAuth(user, {
-				displayName,
-			})) as QueryDocumentSnapshot<UserData>;
+				const userSnapshot = (await createUserDocumentFromAuth(user, {
+					displayName,
+				})) as QueryDocumentSnapshot<UserData>;
 
-			// return { id: userSnapshot.id, ...userSnapshot.data() };
-			return redirect("/");
+				// return { id: userSnapshot.id, ...userSnapshot.data() };
+				return redirect("/");
+			}
+		} catch (error) {
+			if (error instanceof FirebaseError) {
+				return json<AuthErrors>({ signUp: error });
+			}
 		}
 	}
 
@@ -123,7 +146,13 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function AuthenticationRoute() {
+	const errors = useActionData<AuthErrors>();
 	const submit = useSubmit();
+	const transition = useTransition();
+
+	//? We can also narrow down the submission state via the `intent` value,
+	//? but for now let's just disable all buttons when any form submits
+	const isSubmitting = transition.state === "submitting";
 
 	async function handleGoogleSignInPopup(
 		event: React.FormEvent<HTMLFormElement>
@@ -194,16 +223,36 @@ export default function AuthenticationRoute() {
 						id="signin-password"
 						label="Password"
 					/>
+					{errors?.emailSignIn ? (
+						<p className="my-6 text-red-500 text-lg">
+							Incorrect Email/Password.
+						</p>
+					) : null}
+					{errors?.googleSignIn ? (
+						<p className="my-6 text-red-500 text-lg">
+							There was an error in Google Sign in.
+						</p>
+					) : null}
 				</form>
 				<form
 					method="post"
 					className="flex justify-between"
 					onSubmit={handleGoogleSignInPopup}
 				>
-					<Button form="email-sign-in" name="intent" value="email-sign-in">
+					<Button
+						form="email-sign-in"
+						name="intent"
+						value="email-sign-in"
+						disabled={isSubmitting}
+					>
 						Sign in
 					</Button>
-					<Button theme="google" name="intent" value="google-sign-in">
+					<Button
+						theme="google"
+						name="intent"
+						value="google-sign-in"
+						disabled={isSubmitting}
+					>
 						Sign in with Google
 					</Button>
 				</form>
@@ -246,8 +295,21 @@ export default function AuthenticationRoute() {
 						label="Confirm Password"
 					/>
 
+					{errors?.signUp ? (
+						<p className="my-6 text-red-500 text-lg">
+							{errors.signUp.code === AuthErrorCodes.EMAIL_EXISTS
+								? "Email already in use!"
+								: "There was a problem signing up."}
+						</p>
+					) : null}
+
 					<div className="flex justify-between">
-						<Button type="submit" name="intent" value="sign-up">
+						<Button
+							type="submit"
+							name="intent"
+							value="sign-up"
+							disabled={isSubmitting}
+						>
 							Sign up
 						</Button>
 					</div>
