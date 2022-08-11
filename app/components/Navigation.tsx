@@ -27,7 +27,7 @@ export default function Navigation() {
 						Shop
 					</Link>
 					{currentUser ? (
-						<form method="post">
+						<form method="post" action="/">
 							<button
 								name="intent"
 								value="sign-out"

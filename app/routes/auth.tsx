@@ -12,6 +12,7 @@ import {
 	signInAuthUserWithEmailAndPassword,
 	signInWithGooglePopup,
 	signInWithGoogleCredential,
+	createAuthUserWithEmailAndPassword,
 	createUserDocumentFromAuth,
 } from "~/utils/firebase";
 
@@ -38,8 +39,11 @@ export async function action({ request }: ActionArgs) {
 		const email = formData.get("email");
 		const password = formData.get("password");
 
-		invariant(typeof email === "string", "Email is required");
-		invariant(typeof password === "string", "Password is required");
+		invariant(typeof email === "string" && email.length, "Email is required");
+		invariant(
+			typeof password === "string" && password.length,
+			"Password is required"
+		);
 
 		const userCredential = await signInAuthUserWithEmailAndPassword(
 			email,
@@ -83,6 +87,38 @@ export async function action({ request }: ActionArgs) {
 		}
 	}
 
+	if (intent === "sign-up") {
+		const email = formData.get("email");
+		const password = formData.get("password");
+		const displayName = formData.get("displayName");
+
+		invariant(typeof email === "string" && email.length, "Email is required");
+		invariant(
+			typeof password === "string" && password.length,
+			"Password is required"
+		);
+		invariant(
+			typeof displayName === "string" && displayName.length,
+			"Display Name is required"
+		);
+
+		const userCredential = await createAuthUserWithEmailAndPassword(
+			email,
+			password
+		);
+
+		if (userCredential) {
+			const { user } = userCredential;
+
+			const userSnapshot = (await createUserDocumentFromAuth(user, {
+				displayName,
+			})) as QueryDocumentSnapshot<UserData>;
+
+			// return { id: userSnapshot.id, ...userSnapshot.data() };
+			return redirect("/");
+		}
+	}
+
 	return null;
 }
 
@@ -115,6 +151,22 @@ export default function AuthenticationRoute() {
 			} else {
 				console.error(error);
 			}
+		}
+	}
+
+	function handleConfirmPassword(event: React.FormEvent<HTMLFormElement>) {
+		event.preventDefault();
+		const form = event.currentTarget;
+
+		const password = form.password.value;
+		const confirmPassword = form.confirmPassword.value;
+
+		if (password === confirmPassword) {
+			const formData = new FormData(form);
+			formData.set("intent", "sign-up");
+			submit(formData, { method: "post" });
+		} else {
+			alert("Passwords do not match!");
 		}
 	}
 
@@ -157,6 +209,50 @@ export default function AuthenticationRoute() {
 				</form>
 			</div>
 			{/* <SignUpForm /> */}
+
+			<div className="w-96 flex flex-col">
+				<h2 className="my-2 mx-0 text-xl font-bold">
+					Don&apos;t have an account?
+				</h2>
+				<span>Sign up with your email and password</span>
+
+				<form method="POST" id="sign-up" onSubmit={handleConfirmPassword}>
+					<FormInput
+						required
+						type="text"
+						name="displayName"
+						id="signup-display-name"
+						label="Display Name"
+					/>
+					<FormInput
+						required
+						type="email"
+						name="email"
+						id="signup-email"
+						label="Email"
+					/>
+					<FormInput
+						required
+						type="password"
+						name="password"
+						id="signup-password"
+						label="Password"
+					/>
+					<FormInput
+						required
+						type="password"
+						name="confirmPassword"
+						id="signup-confirm-password"
+						label="Confirm Password"
+					/>
+
+					<div className="flex justify-between">
+						<Button type="submit" name="intent" value="sign-up">
+							Sign up
+						</Button>
+					</div>
+				</form>
+			</div>
 		</div>
 	);
 }
